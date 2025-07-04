@@ -4,43 +4,14 @@ import asyncio
 import random
 from playwright.async_api import async_playwright
 
-# Configurações
-DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
-INPUT_FILE = os.path.join(DESKTOP_PATH, 'codigos_barras.txt')
-OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'resultados_cobasi_async.csv')
-
 # Configuração de tempo de espera
 TIMEOUT = 20000  # 15 segundos
 
-def formatar_codigo(codigo):
-    """Garante que o código seja tratado como string e no formato completo"""
-    return str(int(float(codigo))) if '.' in str(codigo) else str(codigo)
-
-async def setup_browser():
-    playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(
-        headless=False,  # Mantenha como False para depuração
-        args=[
-            '--disable-blink-features=AutomationControlled',
-            '--start-maximized'
-        ]
-    )
-    return browser, playwright
-
-import os
-import csv
-import asyncio
-import random
-from playwright.async_api import async_playwright
-
 # Configurações
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 INPUT_FILE = os.path.join(DESKTOP_PATH, 'codigos_barras.txt')
 OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'resultados_cobasi_async.csv')
 
-# Configuração de tempo de espera
-TIMEOUT = 15000  # 15 segundos
-
 def formatar_codigo(codigo):
     """Garante que o código seja tratado como string e no formato completo"""
     return str(int(float(codigo))) if '.' in str(codigo) else str(codigo)
@@ -48,11 +19,7 @@ def formatar_codigo(codigo):
 async def setup_browser():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(
-        headless=False,  # Mantenha como False para depuração
-        args=[
-            '--disable-blink-features=AutomationControlled',
-            '--start-maximized'
-        ]
+        headless=True,  # Mantenha como False para depuração
     )
     return browser, playwright
 
@@ -67,13 +34,12 @@ async def buscar_produto(page, codigo):
             # Configuração turbo
         await page.goto(
             f"https://www.cobasi.com.br/pesquisa?terms={codigo_formatado}",
-            timeout=8000,  # Reduzido para 8 segundos
+            timeout=5000,  # Reduzido para 8 segundos
             wait_until="domcontentloaded"  # Mais rápido que networkidle
         )
             
         # Verifica redirecionamento para página de produto
         if "/p/" in page.url:
-            print("Redirecionado para página de produto")
             nome_produto = await extrair_nome_pagina_produto(page)
             if nome_produto:
                 return nome_produto
@@ -86,12 +52,11 @@ async def buscar_produto(page, codigo):
         
         for seletor in selectors:
             try:
-                print(f"Tentando seletor: {seletor['description']}")
-                element = await page.wait_for_selector(seletor['selector'], timeout=2000, state="attached")
+                element = await page.wait_for_selector(seletor['selector'], timeout=3000, state="attached")
                 if element:
                     texto = (await element.text_content()).strip()
                     if texto:
-                        print(f"Produto encontrado com seletor {seletor['description']}: {texto}")
+                        print(f"{texto}")
                         return texto
             except Exception as e:
                 continue
@@ -156,8 +121,7 @@ def salvar_resultados(resultados):
             writer.writerow([resultado['CÓDIGO'], resultado['PRODUTO'], resultado['ENCONTRADO']])
 
 async def main():
-    print("🚀 Iniciando busca na Cobasi")
-    
+
     if not os.path.exists(INPUT_FILE):
         print(f"❌ Arquivo não encontrado: {INPUT_FILE}")
         return
@@ -170,7 +134,7 @@ async def main():
     browser, playwright = await setup_browser()
     
     try:
-        tamanho_lote = 20
+        tamanho_lote = 500
         lotes = [codigos[i:i + tamanho_lote] for i in range(0, len(codigos), tamanho_lote)]
         resultados_totais = []
         
