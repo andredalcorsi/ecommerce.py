@@ -4,13 +4,12 @@ import asyncio
 import random
 from playwright.async_api import async_playwright
 
-# Configurações
-TIMEOUT = 25000  # 25 seconds
+# Input/Output Settings
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
-INPUT_FILE = os.path.join(DESKTOP_PATH, 'codigos_barras.txt')
-OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'resultados_cobasi_async.csv')
+INPUT_FILE = os.path.join(DESKTOP_PATH, 'EAN.txt')
+OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'results.csv')
 
-# Lista de seletores CSS para encontrar produtos
+# Selectors list to extract the product name
 PRODUCT_SELECTORS = [
     'h2.product-card__name'
 ]
@@ -22,13 +21,13 @@ def formatar_codigo(codigo):
 async def setup_browser():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(
-        headless=False,  # Modo headless desativado para depuração
+        headless=True,  # Switch to "False" to active the depuration mode
         timeout=60000
     )
     return browser, playwright
 
-# Modifique a função buscar_produto para esta versão:
-# Seletor específico para estado vazio
+
+# Specific Selector for empty state
 EMPTY_STATE_SELECTOR = 'p.empty-state__title'
 
 async def buscar_produto(page, codigo):
@@ -38,17 +37,17 @@ async def buscar_produto(page, codigo):
         
         await page.goto(
             f"https://www.petlove.com.br/busca?q={codigo_formatado}",
-            timeout=15000,
+            timeout=25000,
             wait_until="networkidle"
         )
         
-        # Primeiro verifica se é uma página vazia
+        # Verify first if it's a empty result
         empty_state = await page.query_selector(EMPTY_STATE_SELECTOR)
         if empty_state:
             print(f"Estado vazio detectado para {codigo_formatado}")
             return None
             
-        # Se não for vazio, procura pelos produtos
+        # If not, then extract the name of the product by the selector according the EAN
         for selector in PRODUCT_SELECTORS:
             try:
                 element = await page.wait_for_selector(selector, timeout=3000)
@@ -60,7 +59,7 @@ async def buscar_produto(page, codigo):
             except:
                 continue
         
-        # Se chegou aqui e não encontrou nem empty state nem produto
+        # If you didn't find a product not even the 'empty state' 
         print(f"Nenhum produto encontrado (sem estado vazio explícito) para {codigo_formatado}")
         return None
         
@@ -124,7 +123,7 @@ async def main():
     browser, playwright = await setup_browser()
     
     try:
-        tamanho_lote = 100  # Reduzi o tamanho do lote para evitar timeouts
+        tamanho_lote = 1000  # You can change the batch size here
         lotes = [codigos[i:i + tamanho_lote] for i in range(0, len(codigos), tamanho_lote)]
         resultados_totais = []
         
@@ -135,7 +134,7 @@ async def main():
             salvar_resultados(resultados_totais)
             
             if i < len(lotes):
-                delay = random.uniform(5, 10)  # Aumentei o delay entre lotes
+                delay = random.uniform(5, 10)  # Delay between bactchs
                 print(f"⏳ Aguardando {delay:.1f}s...")
                 await asyncio.sleep(delay)
         
