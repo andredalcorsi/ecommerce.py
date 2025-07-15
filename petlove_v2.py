@@ -4,13 +4,16 @@ import asyncio
 import random
 from playwright.async_api import async_playwright
 
-# Configuração de tempo de espera
-TIMEOUT = 20000  # 15 segundos
-
 # Configurações
+TIMEOUT = 25000  # 25 seconds
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 INPUT_FILE = os.path.join(DESKTOP_PATH, 'codigos_barras.txt')
 OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'resultados_cobasi_async.csv')
+
+# Lista de seletores CSS para encontrar produtos
+PRODUCT_SELECTORS = [
+    'h2.product-card__name'
+]
 
 def formatar_codigo(codigo):
     """Garante que o código seja tratado como string e no formato completo"""
@@ -19,70 +22,58 @@ def formatar_codigo(codigo):
 async def setup_browser():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(
-        headless=True,  # Mantenha como False para depuração
+        headless=False,  # Modo headless desativado para depuração
+        timeout=60000
     )
     return browser, playwright
+
+# Modifique a função buscar_produto para esta versão:
+# Seletor específico para estado vazio
+EMPTY_STATE_SELECTOR = 'p.empty-state__title'
 
 async def buscar_produto(page, codigo):
     try:
         codigo_formatado = formatar_codigo(codigo)
         print(f"\nBuscando: {codigo_formatado}")
         
-        await asyncio.sleep(random.uniform(1, 3))
-        page.set_default_timeout(TIMEOUT)
-        
-            # Configuração turbo
         await page.goto(
-            f"https://www.cobasi.com.br/pesquisa?terms={codigo_formatado}",
-            timeout=5000,  # Reduzido para 8 segundos
-            wait_until="domcontentloaded"  # Mais rápido que networkidle
+            f"https://www.petlove.com.br/busca?q={codigo_formatado}",
+            timeout=15000,
+            wait_until="networkidle"
         )
+        
+        # Primeiro verifica se é uma página vazia
+        empty_state = await page.query_selector(EMPTY_STATE_SELECTOR)
+        if empty_state:
+            print(f"Estado vazio detectado para {codigo_formatado}")
+            return None
             
-        # Verifica redirecionamento para página de produto
-        if "/p/" in page.url:
-            nome_produto = await extrair_nome_pagina_produto(page)
-            if nome_produto:
-                return nome_produto
-        
-        # Seletores específicos para a estrutura atual da Cobasi
-        selectors = [
-            {"selector": "h3.styles_Title-sc-3uf957-1", "description": "Título principal novo padrão"},
-            {"selector": "h3[class*='Title-sc']", "description": "Título com classe contendo Title-sc"},
-        ]
-        
-        for seletor in selectors:
+        # Se não for vazio, procura pelos produtos
+        for selector in PRODUCT_SELECTORS:
             try:
-                element = await page.wait_for_selector(seletor['selector'], timeout=3000, state="attached")
+                element = await page.wait_for_selector(selector, timeout=3000)
                 if element:
-                    texto = (await element.text_content()).strip()
-                    if texto:
-                        print(f"{texto}")
-                        return texto
-            except Exception as e:
+                    produto = (await element.text_content()).strip()
+                    if produto and codigo_formatado not in produto:
+                        print(f"Produto encontrado: {produto}")
+                        return produto
+            except:
                 continue
-                
-        print("Nenhum seletor encontrou produto")
+        
+        # Se chegou aqui e não encontrou nem empty state nem produto
+        print(f"Nenhum produto encontrado (sem estado vazio explícito) para {codigo_formatado}")
         return None
         
     except Exception as e:
-        print(f"Erro ao buscar {codigo}: {str(e)}")
+        print(f"Erro ao buscar {codigo_formatado}: {str(e)}")
         return None
 
 async def extrair_nome_pagina_produto(page):
     """Extrai nome do produto quando redirecionado para página de detalhe"""
     try:
-        selectors = [
-            "h1.product-name",
-            "h1[itemprop='name']",
-            ".product-name__title",
-            ".product-info__name",
-            "h1.title",
-            "h1.productName"
-        ]
-        
-        for selector in selectors:
+        for selector in PRODUCT_SELECTORS:
             try:
-                element = await page.query_selector(selector)
+                element = await page.wait_for_selector(selector, timeout=3000)
                 if element:
                     texto = (await element.text_content()).strip()
                     if texto:
@@ -96,7 +87,7 @@ async def extrair_nome_pagina_produto(page):
 async def processar_lote(browser, lote):
     context = await browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        viewport={'width': 1280, 'height': 720}
+        viewport={'width': 720, 'height': 1280}
     )
     page = await context.new_page()
     
@@ -108,7 +99,7 @@ async def processar_lote(browser, lote):
             'PRODUTO': produto if produto else '',
             'ENCONTRADO': 'SIM' if produto else 'NÃO'
         })
-        await context.clear_cookies()  # Limpa cookies entre requisições
+        await context.clear_cookies()
     
     await context.close()
     return resultados
@@ -121,7 +112,6 @@ def salvar_resultados(resultados):
             writer.writerow([resultado['CÓDIGO'], resultado['PRODUTO'], resultado['ENCONTRADO']])
 
 async def main():
-
     if not os.path.exists(INPUT_FILE):
         print(f"❌ Arquivo não encontrado: {INPUT_FILE}")
         return
@@ -134,7 +124,7 @@ async def main():
     browser, playwright = await setup_browser()
     
     try:
-        tamanho_lote = 500
+        tamanho_lote = 100  # Reduzi o tamanho do lote para evitar timeouts
         lotes = [codigos[i:i + tamanho_lote] for i in range(0, len(codigos), tamanho_lote)]
         resultados_totais = []
         
@@ -145,7 +135,7 @@ async def main():
             salvar_resultados(resultados_totais)
             
             if i < len(lotes):
-                delay = random.uniform(3, 8)
+                delay = random.uniform(5, 10)  # Aumentei o delay entre lotes
                 print(f"⏳ Aguardando {delay:.1f}s...")
                 await asyncio.sleep(delay)
         
