@@ -1,7 +1,7 @@
-# ECOMMERCE.PY
+# WEBSCRAPING | ECOMMERCE.PY
 
 ## About
-Ecommerce.py is a program based on Python language to extract the product name from a marketplace like [PetLove](petlove.com.br). The main idea is make easier to pick up some name that has already setup for you to use anyway you want to.
+Ecommerce.py is a webscraper based on Python language to extract focuse to extrat product names from every marketplace whose let you search by the bar code on Search Bar. The main idea is make easier to pick up some name that has already setup for you to use anyway you want to.
 
 ### Basic Guide 
 First of all, the functions are in Brazilian Portuguese. You can change the name of the functions, but you must pay attention and avoid to forget all of them. 
