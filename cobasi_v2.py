@@ -7,11 +7,11 @@ from playwright.async_api import async_playwright
 # Input/Output Settings
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 INPUT_FILE = os.path.join(DESKTOP_PATH, 'EAN.txt')
-OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'results.csv')
+OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'cobasi_results.csv')
 
 # Selectors list to extract the product name
 PRODUCT_SELECTORS = [
-    'h2.product-card__name'
+    'h3.styles__Title-sc-3uf957-1'
 ]
 
 def formatar_codigo(codigo):
@@ -28,15 +28,15 @@ async def setup_browser():
 
 
 # Specific Selector for empty state
-EMPTY_STATE_SELECTOR = 'p.empty-state__title'
+EMPTY_STATE_SELECTOR = 'h2.dialog-subtitle'
 
 async def buscar_produto(page, codigo):
     try:
         codigo_formatado = formatar_codigo(codigo)
-        print(f"\nBuscando: {codigo_formatado}")
+        print(f"\nSearching: {codigo_formatado}")
         
         await page.goto(
-            f"https://www.petlove.com.br/busca?q={codigo_formatado}",
+            f"https://www.cobasi.com.br/pesquisa?terms={codigo_formatado}",
             timeout=25000,
             wait_until="networkidle"
         )
@@ -44,7 +44,7 @@ async def buscar_produto(page, codigo):
         # Verify first if it's a empty result
         empty_state = await page.query_selector(EMPTY_STATE_SELECTOR)
         if empty_state:
-            print(f"Estado vazio detectado para {codigo_formatado}")
+            print(f"{codigo_formatado} hasn't been found!")
             return None
             
         # If not, then extract the name of the product by the selector according the EAN
