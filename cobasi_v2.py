@@ -6,8 +6,8 @@ from playwright.async_api import async_playwright
 
 # Input/Output Settings
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
-INPUT_FILE = os.path.join(DESKTOP_PATH, 'codigos_barras.txt')
-OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'resultados_cobasi_async.csv')
+INPUT_FILE = os.path.join(DESKTOP_PATH, 'EAN.txt')
+OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'results.csv')
 
 # Selectors list to extract the product name
 PRODUCT_SELECTORS = [
