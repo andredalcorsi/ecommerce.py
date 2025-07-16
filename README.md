@@ -18,7 +18,7 @@ OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'results.csv')
 
 ```
 
-**NOTE**: The **.txt** file need to be in your Desktop, like this print screen :point_down:
+**NOTE**: The **.txt** file need to be in your Desktop, like the representation on this print screen :point_down: | As pattern, the **.csv** file will be created on the desktop folder, too. 
 
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/1e38c2a6-cd8d-4579-8edc-6491df19e31e" />
 
