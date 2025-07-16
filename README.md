@@ -8,7 +8,7 @@ First of all, the functions are in Brazilian Portuguese. You can change the name
 
 ### Input and Output Files 
 
-To make this code functional, you need to create a **.txt** file and add the EAN **(European Article File / International Article File)** that you want to search. The pattern path is settled up as below: 
+To make this code functional, you need to create a **.txt** file and add the EAN **(European Article File / International Article File)** that you want to search. The pattern path is settled up as below. You need to change the path according your system (Linux/MacOS/Windows): 
 
 ```
 # Input/Output Settings
