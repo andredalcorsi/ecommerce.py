@@ -4,15 +4,21 @@
 Ecommerce.py is a program based on Python language to extract the product name from a marketplace like [PetLove](petlove.com.br). The main idea is make easier to pick up some name that has already setup for you to use anyway you want to.
 
 ### Basic Guide 
-First of all, the functions are in Brazilian Portuguese. You can change the name of the functions, but you must pay attention and avoid to forget some of them. 
+First of all, the functions are in Brazilian Portuguese. You can change the name of the functions, but you must pay attention and avoid to forget all of them. 
 
 ### Input and Output Files 
 
-To make this code functiona, you need to create a **.txt** file and add the EAN codes that you want to search. 
+To make this code functional, you need to create a **.txt** file and add the EAN codes that you want to search. The pattern path is settled up as below: 
 
 ```
 # Input/Output Settings
 DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 INPUT_FILE = os.path.join(DESKTOP_PATH, 'EAN.txt')
 OUTPUT_CSV = os.path.join(DESKTOP_PATH, 'results.csv')
+
 ```
+
+**NOTE**: The **.txt** file need to be in your Desktop, like this print screen :point_down:
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/1e38c2a6-cd8d-4579-8edc-6491df19e31e" />
+
